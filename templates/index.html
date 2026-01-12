@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Local YOLO Trainer</title>
+
+  <style>
+    :root{
+      --bg0:#050815;
+      --bg1:#0b1233;
+      --card: rgba(255,255,255,0.08);
+      --card2: rgba(255,255,255,0.10);
+      --border: rgba(255,255,255,0.14);
+      --text:#eaf0ff;
+      --muted:#b7c3ff;
+      --muted2:#9aa7e6;
+      --shadow: 0 18px 70px rgba(0,0,0,0.45);
+      --radius: 18px;
+
+      --a1:#7c3aed; /* purple */
+      --a2:#22c55e; /* green */
+      --a3:#06b6d4; /* cyan */
+      --a4:#f97316; /* orange */
+      --a5:#60a5fa; /* blue */
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 500px at 15% 10%, rgba(124,58,237,0.35), transparent 60%),
+        radial-gradient(800px 450px at 85% 0%, rgba(6,182,212,0.30), transparent 60%),
+        radial-gradient(900px 550px at 70% 85%, rgba(34,197,94,0.20), transparent 65%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow-x:hidden;
+    }
+
+    a{ color: inherit; text-decoration:none; }
+    a:hover{ text-decoration:none; }
+
+    .wrap{ max-width: 1180px; margin: 22px auto; padding: 0 16px 30px; }
+
+    /* Top bar */
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between; gap: 12px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 12px;
+      z-index: 10;
+    }
+
+    .brand{
+      display:flex; align-items:center; gap: 10px;
+      font-weight: 800;
+      letter-spacing:-0.02em;
+    }
+
+    .logo{
+      width: 34px; height: 34px; border-radius: 12px;
+      background: linear-gradient(135deg, rgba(124,58,237,1), rgba(6,182,212,1));
+      box-shadow: 0 10px 28px rgba(124,58,237,0.35);
+    }
+
+    .nav{
+      display:flex; gap: 10px; align-items:center; flex-wrap: wrap;
+    }
+
+    .pill{
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 13px;
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      transition: transform .05s ease, background .15s ease, border-color .15s ease;
+      user-select:none;
+      cursor:pointer;
+    }
+
+    .pill:hover{
+      background: rgba(255,255,255,0.10);
+      border-color: rgba(255,255,255,0.22);
+    }
+    .pill:active{ transform: translateY(1px); }
+
+    .pill.primary{
+      background: linear-gradient(135deg, rgba(96,165,250,0.25), rgba(34,197,94,0.20));
+      border-color: rgba(96,165,250,0.35);
+    }
+
+    .hintmini{
+      color: var(--muted2);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    /* Hero */
+    .hero{
+      margin-top: 14px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(124,58,237,0.18), rgba(6,182,212,0.10));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero h1{ margin:0 0 6px; font-size: 28px; letter-spacing:-0.03em; }
+    .hero p{ margin:0; color: var(--muted); font-size: 14px; line-height:1.4; }
+
+    /* Layout */
+    .grid{ display:grid; grid-template-columns: 440px 1fr; gap: 14px; margin-top: 14px; }
+    @media (max-width: 980px){ .grid{ grid-template-columns: 1fr; } }
+
+    /* Cards */
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      overflow:hidden;
+    }
+
+    .card-hd{
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 12px;
+    }
+
+    .card-hd h3{
+      margin:0;
+      font-size: 13px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(234,240,255,0.92);
+    }
+
+    .card-bd{ padding: 14px 16px 16px; }
+
+    .muted{ color: var(--muted2); font-size: 12px; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+    /* Sections inside card */
+    .section{
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 12px;
+      background: rgba(0,0,0,0.18);
+      margin-top: 12px;
+    }
+
+    .section h4{
+      margin:0 0 10px;
+      font-size: 12px;
+      letter-spacing: .10em;
+      text-transform: uppercase;
+      color: rgba(234,240,255,0.92);
+    }
+
+    .row{ display:flex; gap: 10px; flex-wrap: wrap; align-items:center; }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap: 6px;
+      min-width: 150px;
+      flex: 1;
+    }
+
+    .label{ font-size: 12px; color: var(--muted); }
+
+    input[type="text"], input[type="number"], select{
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.07);
+      color: var(--text);
+      outline: none;
+      transition: box-shadow .15s ease, border-color .15s ease, background .15s ease;
+    }
+
+    input::placeholder{ color: rgba(183,195,255,0.55); }
+
+    input:focus, select:focus{
+      border-color: rgba(96,165,250,0.45);
+      box-shadow: 0 0 0 4px rgba(96,165,250,0.18);
+      background: rgba(255,255,255,0.10);
+    }
+
+    .radio-group{
+      display:flex; gap: 10px; flex-wrap: wrap; align-items:center;
+      padding: 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+    }
+
+    .radio{
+      display:flex; align-items:center; gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.12);
+      color: rgba(234,240,255,0.92);
+      font-size: 13px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .radio:hover{ border-color: rgba(255,255,255,0.18); }
+    .radio input{ transform: translateY(1px); }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      cursor:pointer;
+      font-weight: 800;
+      font-size: 13px;
+      user-select:none;
+      transition: transform .05s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover{
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.22);
+      box-shadow: 0 14px 30px rgba(0,0,0,0.25);
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btn:disabled{ opacity: .55; cursor: not-allowed; box-shadow:none; }
+
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(124,58,237,0.35), rgba(6,182,212,0.25));
+      border-color: rgba(124,58,237,0.45);
+    }
+
+    .btn.success{
+      background: linear-gradient(135deg, rgba(34,197,94,0.25), rgba(96,165,250,0.20));
+      border-color: rgba(34,197,94,0.40);
+    }
+
+    /* Status */
+    .status-pill{
+      display:inline-flex; align-items:center; gap: 8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.14);
+      color: rgba(234,240,255,0.92);
+      font-size: 12px;
+    }
+
+    .dot{ width: 9px; height: 9px; border-radius: 999px; background: rgba(183,195,255,0.55); }
+    .dot.running{ background: rgba(249,115,22,0.95); box-shadow: 0 0 0 6px rgba(249,115,22,0.16); }
+    .dot.done{ background: rgba(34,197,94,0.95); box-shadow: 0 0 0 6px rgba(34,197,94,0.14); }
+    .dot.error{ background: rgba(239,68,68,0.95); box-shadow: 0 0 0 6px rgba(239,68,68,0.14); }
+
+    /* Hint blocks */
+    .hint{
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px dashed rgba(255,255,255,0.18);
+      background: rgba(0,0,0,0.18);
+      color: rgba(234,240,255,0.86);
+      font-size: 12.5px;
+      line-height: 1.35;
+    }
+
+    .hint pre{
+      margin: 8px 0 0;
+      padding: 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      overflow-x: auto;
+      font-size: 12px;
+    }
+
+    /* Progress */
+    .progress-wrap{
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.18);
+    }
+
+    .progress-bar{
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.08);
+      overflow:hidden;
+    }
+
+    .progress-fill{
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, rgba(124,58,237,1), rgba(6,182,212,1), rgba(34,197,94,1));
+      transition: width .15s linear;
+    }
+
+    .progress-meta{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 10px;
+      margin-top: 8px;
+      color: rgba(183,195,255,0.90);
+      font-size: 12px;
+    }
+
+    .error{
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(239,68,68,0.28);
+      background: rgba(239,68,68,0.10);
+      color: rgba(255,210,210,0.96);
+      display:none;
+      white-space: pre-wrap;
+      font-size: 13px;
+    }
+
+    /* Logs */
+    .logs{
+      height: 700px;
+      overflow:auto;
+      border-radius: var(--radius);
+      background: rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 12px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+      line-height: 1.35;
+      font-size: 12.6px;
+      color: rgba(234,240,255,0.90);
+    }
+    .logs .line{ white-space: pre-wrap; }
+    .logs::-webkit-scrollbar{ width: 10px; }
+    .logs::-webkit-scrollbar-thumb{ background: rgba(183,195,255,0.25); border-radius: 999px; }
+    .logs::-webkit-scrollbar-track{ background: transparent; }
+
+    .sticky{ position: sticky; top: 86px; }
+
+    .tiny{
+      font-size: 12px;
+      color: rgba(183,195,255,0.70);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <!-- TOP NAV -->
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <div style="line-height:1.05;">YOLO Local Trainer</div>
+          <div class="hintmini">Train • Save weights • View metrics</div>
+        </div>
+      </div>
+
+      <div class="nav">
+        <a class="pill primary" href="/">🧠 Trainer</a>
+        <a class="pill" href="/metrics">📊 Metrics</a>
+        <div class="hintmini">Local app only • no uploads</div>
+      </div>
+    </div>
+
+    <!-- HERO -->
+    <div class="hero">
+      <h1>Train models locally, fast.</h1>
+      <p>Pick a dataset folder or a built-in YAML preset, choose your YOLO version and size, then export weights anywhere on your PC.</p>
+    </div>
+
+    <div class="grid">
+
+      <!-- LEFT: CONTROLS -->
+      <div class="card sticky">
+        <div class="card-hd">
+          <h3>Trainer</h3>
+          <div class="status-pill">
+            <span class="dot" id="statusDot"></span>
+            <span>Status:</span>
+            <strong id="status">idle</strong>
+          </div>
+        </div>
+
+        <div class="card-bd">
+
+          <!-- Dataset source -->
+          <div class="section">
+            <h4>Dataset source</h4>
+
+            <div class="radio-group">
+              <label class="radio">
+                <input type="radio" name="dsMode" value="local" checked />
+                Local folder
+              </label>
+              <label class="radio">
+                <input type="radio" name="dsMode" value="preset" />
+                Ultralytics preset (YAML)
+              </label>
+            </div>
+
+            <!-- Local controls -->
+            <div id="localControls" style="margin-top:10px;">
+              <div class="row">
+                <button class="btn primary" id="pickDatasetBtn">📁 Pick dataset folder</button>
+                <button class="btn" id="pickOutputBtn">🗂️ Output folder (optional)</button>
+              </div>
+
+              <div style="margin-top:10px;">
+                <div class="muted">Dataset</div>
+                <div class="mono" id="datasetPath" style="margin-top:4px;">—</div>
+
+                <div class="muted" style="margin-top:10px;">Output</div>
+                <div class="mono" id="outputPath" style="margin-top:4px;">—</div>
+              </div>
+
+              <div class="hint">
+                Pick the <strong>dataset root</strong> (not <span class="mono">images/</span> or <span class="mono">train/</span>). Must include <span class="mono">data.yaml</span> or this structure:
+                <pre class="mono">mydataset/
+  images/
+    train/
+    val/
+  labels/
+    train/
+    val/</pre>
+                Labels: <span class="mono">class x_center y_center width height</span> (0–1 normalized)
+              </div>
+            </div>
+
+            <!-- Preset controls -->
+            <div id="presetControls" style="margin-top:10px; display:none;">
+              <div class="row">
+                <div class="field" style="min-width: 200px;">
+                  <div class="label">Preset YAML</div>
+                  <select id="presetSel">
+                    <option value="coco8.yaml">coco8.yaml (tiny)</option>
+                    <option value="coco128.yaml">coco128.yaml (small)</option>
+                    <option value="coco.yaml">coco.yaml (full COCO)</option>
+                  </select>
+                </div>
+
+                <div class="field" style="min-width: 240px;">
+                  <div class="label">Custom YAML (optional)</div>
+                  <input id="presetCustom" type="text" placeholder="e.g. coco8-seg.yaml" />
+                </div>
+              </div>
+
+              <div class="hint">
+                Presets auto-download when training starts. Use <span class="mono">coco8</span> first to validate your setup.
+              </div>
+            </div>
+          </div>
+
+          <!-- Training settings -->
+          <div class="section">
+            <h4>Training settings</h4>
+
+            <div class="row">
+              <div class="field" style="min-width: 140px; flex:0.6;">
+                <div class="label">YOLO version</div>
+                <select id="yoloVer">
+                  <option value="8" selected>v8</option>
+                  <option value="9">v9</option>
+                  <option value="10">v10</option>
+                  <option value="11">v11</option>
+                  <option value="12">v12</option>
+                </select>
+              </div>
+
+              <div class="field" style="min-width: 160px; flex:0.8;">
+                <div class="label">Model size</div>
+                <select id="yoloSize">
+                  <option value="n" selected>nano (n)</option>
+                  <option value="s">small (s)</option>
+                  <option value="m">medium (m)</option>
+                  <option value="l">large (l)</option>
+                  <option value="x">xlarge (x)</option>
+                </select>
+              </div>
+
+              <div class="field" style="min-width: 260px; flex:1.4;">
+                <div class="label">Custom model (optional)</div>
+                <input id="customModel" type="text" placeholder="e.g. yolo11n.pt or C:\models\best.pt" />
+              </div>
+            </div>
+
+            <div class="hint" style="margin-top:10px;">
+              Model used: <span class="mono" id="modelPreview">yolov8n.pt</span>
+              <div class="tiny" style="margin-top:6px;">
+                Note: some versions use different naming (e.g. YOLO11 uses <span class="mono">yolo11n.pt</span>). Use Custom model if needed.
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:10px;">
+              <div class="field" style="min-width: 220px;">
+                <div class="label">Run name</div>
+                <input id="runName" type="text" placeholder="e.g. my_custom_yolo" />
+              </div>
+
+              <div class="field">
+                <div class="label">Epochs</div>
+                <input id="epochs" type="number" value="50" min="1" />
+              </div>
+
+              <div class="field">
+                <div class="label">ImgSz</div>
+                <input id="imgsz" type="number" value="640" min="64" step="32" />
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:12px;">
+              <button class="btn primary" id="startBtn">🚀 Start training</button>
+              <button class="btn success" id="downloadBtn" disabled>💾 Download .pt</button>
+              <a class="btn" href="/metrics" title="View results from the last run">📊 View metrics</a>
+            </div>
+
+            <div class="progress-wrap">
+              <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+              <div class="progress-meta">
+                <div class="mono" id="epochText">Epoch: —</div>
+                <div class="mono" id="progressText">0%</div>
+              </div>
+              <div class="muted" style="margin-top:6px;">
+                Saved: <span class="mono" id="savedPath">—</span>
+              </div>
+            </div>
+
+            <div class="error" id="errorText"></div>
+          </div>
+
+          <div class="tiny" style="margin-top: 12px;">
+            Tip: If a model name isn’t found, paste a local weight path in “Custom model”.
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: LOGS -->
+      <div class="card">
+        <div class="card-hd">
+          <h3>Live Logs</h3>
+          <div class="muted">Training output stream</div>
+        </div>
+        <div class="card-bd">
+          <div class="logs mono" id="logs"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+  const dsRadios = document.querySelectorAll('input[name="dsMode"]');
+  const localControls = document.getElementById("localControls");
+  const presetControls = document.getElementById("presetControls");
+
+  const datasetPathEl = document.getElementById("datasetPath");
+  const outputPathEl = document.getElementById("outputPath");
+
+  const statusEl = document.getElementById("status");
+  const statusDot = document.getElementById("statusDot");
+
+  const progressFill = document.getElementById("progressFill");
+  const progressText = document.getElementById("progressText");
+  const epochText = document.getElementById("epochText");
+
+  const errorText = document.getElementById("errorText");
+  const logsEl = document.getElementById("logs");
+  const savedPathEl = document.getElementById("savedPath");
+
+  const pickDatasetBtn = document.getElementById("pickDatasetBtn");
+  const pickOutputBtn = document.getElementById("pickOutputBtn");
+
+  const startBtn = document.getElementById("startBtn");
+  const downloadBtn = document.getElementById("downloadBtn");
+
+  const yoloVerSel = document.getElementById("yoloVer");
+  const yoloSizeSel = document.getElementById("yoloSize");
+  const customModelIn = document.getElementById("customModel");
+  const modelPreviewEl = document.getElementById("modelPreview");
+
+  const runNameIn = document.getElementById("runName");
+  const epochsIn = document.getElementById("epochs");
+  const imgszIn = document.getElementById("imgsz");
+
+  const presetSel = document.getElementById("presetSel");
+  const presetCustom = document.getElementById("presetCustom");
+
+  function getDatasetMode() {
+    return [...dsRadios].find(r => r.checked)?.value || "local";
+  }
+  function updateDatasetModeUI() {
+    const m = getDatasetMode();
+    localControls.style.display = (m === "local") ? "block" : "none";
+    presetControls.style.display = (m === "preset") ? "block" : "none";
+  }
+  dsRadios.forEach(r => r.addEventListener("change", updateDatasetModeUI));
+  updateDatasetModeUI();
+
+  function computeModelString() {
+    const custom = (customModelIn.value || "").trim();
+    if (custom) return custom;
+
+    const ver = yoloVerSel.value;   
+    const size = yoloSizeSel.value; 
+
+    
+    if (ver === "11") return `yolo11${size}.pt`;
+
+    
+    return `yolov${ver}${size}.pt`;
+  }
+  function updateModelPreview() {
+    modelPreviewEl.textContent = computeModelString();
+  }
+  yoloVerSel.addEventListener("change", updateModelPreview);
+  yoloSizeSel.addEventListener("change", updateModelPreview);
+  customModelIn.addEventListener("input", updateModelPreview);
+  updateModelPreview();
+
+  function setProgress(p) {
+    const pct = Math.max(0, Math.min(100, p || 0));
+    progressFill.style.width = pct + "%";
+    progressText.textContent = pct.toFixed(0) + "%";
+  }
+
+  function setStatus(status) {
+    statusEl.textContent = status || "idle";
+    statusDot.className = "dot";
+    if (status === "running") statusDot.classList.add("running");
+    else if (status === "done") statusDot.classList.add("done");
+    else if (status === "error") statusDot.classList.add("error");
+  }
+
+  function showError(msg) {
+    if (msg) {
+      errorText.style.display = "block";
+      errorText.textContent = msg;
+    } else {
+      errorText.style.display = "none";
+      errorText.textContent = "";
+    }
+  }
+
+  function addLog(line) {
+    const d = document.createElement("div");
+    d.className = "line";
+    d.textContent = line;
+    logsEl.appendChild(d);
+    logsEl.scrollTop = logsEl.scrollHeight;
+  }
+
+  async function refreshState() {
+    const r = await fetch("/api/state");
+    const s = await r.json();
+
+    datasetPathEl.textContent = s.dataset_path || "—";
+    outputPathEl.textContent = s.output_path || "—";
+
+    setStatus(s.status || "idle");
+    setProgress(s.progress_pct || 0);
+
+    epochText.textContent = s.total_epochs ? `Epoch: ${s.current_epoch}/${s.total_epochs}` : "Epoch: —";
+    showError(s.last_error || "");
+
+    savedPathEl.textContent = s.exported_model_path || "—";
+
+    downloadBtn.disabled = !(s.status === "done" && s.best_pt_path);
+    startBtn.disabled = (s.status === "running");
+  }
+
+  pickDatasetBtn.onclick = async () => {
+    showError("");
+    const r = await fetch("/api/pick_dataset", { method: "POST" });
+    const d = await r.json();
+    if (!r.ok) showError(d.error || "Failed to pick dataset");
+    await refreshState();
+  };
+
+  pickOutputBtn.onclick = async () => {
+    showError("");
+    const r = await fetch("/api/pick_output", { method: "POST" });
+    const d = await r.json();
+    if (!r.ok) showError(d.error || "Failed to pick output folder");
+    await refreshState();
+  };
+
+  startBtn.onclick = async () => {
+    showError("");
+    logsEl.innerHTML = "";
+    setProgress(0);
+    savedPathEl.textContent = "—";
+    downloadBtn.disabled = true;
+
+    const payload = {
+      model: computeModelString(),
+      epochs: Number(epochsIn.value || 50),
+      imgsz: Number(imgszIn.value || 640),
+      dataset_mode: getDatasetMode(),
+      preset_yaml: (presetCustom.value || "").trim() || presetSel.value,
+      run_name: (runNameIn.value || "").trim()
+    };
+
+    const r = await fetch("/api/start_train", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const d = await r.json();
+    if (!r.ok) showError(d.error || "Failed to start training");
+    else await refreshState();
+  };
+
+  downloadBtn.onclick = async () => {
+    showError("");
+    const r = await fetch("/api/export_model", { method: "POST" });
+    const d = await r.json();
+    if (!r.ok) {
+      showError(d.error || "Export failed");
+      return;
+    }
+    await refreshState();
+  };
+
+  const evt = new EventSource("/api/logs");
+  evt.addEventListener("log", e => addLog(JSON.parse(e.data).line));
+  evt.addEventListener("progress", e => {
+    const p = JSON.parse(e.data);
+    setStatus(p.status);
+    setProgress(p.progress_pct);
+    epochText.textContent = p.total_epochs ? `Epoch: ${p.current_epoch}/${p.total_epochs}` : "Epoch: —";
+    showError(p.last_error || "");
+    downloadBtn.disabled = !(p.status === "done" && p.best_pt_path);
+    if (p.status === "done" || p.status === "error") refreshState();
+    startBtn.disabled = (p.status === "running");
+  });
+
+  refreshState();
+</script>
+
+</body>
+</html>

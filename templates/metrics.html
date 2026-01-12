@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Run Metrics</title>
+
+  <style>
+    :root{
+      --bg0:#050815;
+      --bg1:#0b1233;
+      --card: rgba(255,255,255,0.08);
+      --border: rgba(255,255,255,0.14);
+      --text:#eaf0ff;
+      --muted:#b7c3ff;
+      --muted2:#9aa7e6;
+      --shadow: 0 18px 70px rgba(0,0,0,0.45);
+      --radius: 18px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 500px at 15% 10%, rgba(124,58,237,0.35), transparent 60%),
+        radial-gradient(800px 450px at 85% 0%, rgba(6,182,212,0.30), transparent 60%),
+        radial-gradient(900px 550px at 70% 85%, rgba(34,197,94,0.20), transparent 65%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow-x:hidden;
+    }
+
+    a{ color: inherit; text-decoration:none; }
+    .wrap{ max-width: 1180px; margin: 22px auto; padding: 0 16px 30px; }
+
+    /* Top bar */
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 12px;
+      z-index: 10;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      font-weight: 800;
+      letter-spacing:-0.02em;
+    }
+
+    .logo{
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(34,197,94,1), rgba(6,182,212,1));
+      box-shadow: 0 10px 28px rgba(6,182,212,0.30);
+    }
+
+    .nav{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      flex-wrap: wrap;
+    }
+
+    .pill{
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 13px;
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .pill:hover{
+      background: rgba(255,255,255,0.10);
+      border-color: rgba(255,255,255,0.22);
+    }
+    .pill.primary{
+      background: linear-gradient(135deg, rgba(96,165,250,0.25), rgba(34,197,94,0.20));
+      border-color: rgba(96,165,250,0.35);
+    }
+
+    /* Hero */
+    .hero{
+      margin-top: 14px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(34,197,94,0.18), rgba(6,182,212,0.10));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero h1{ margin:0 0 6px; font-size: 28px; letter-spacing:-0.03em; }
+    .hero p{ margin:0; color: var(--muted); font-size: 14px; line-height:1.4; }
+
+    /* Cards */
+    .card{
+      margin-top: 14px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      overflow:hidden;
+    }
+
+    .card-hd{
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .card-hd h3{
+      margin:0;
+      font-size: 13px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(234,240,255,0.92);
+    }
+
+    .card-bd{ padding: 14px 16px 16px; }
+
+    .row{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items:center;
+    }
+
+    .muted{ color: var(--muted2); font-size: 12px; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+    /* Inputs */
+    input, select{
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.10);
+      color: var(--text);
+      outline:none;
+    }
+
+    input{ width: 260px; }
+    select{ min-width: 260px; max-width: 520px; }
+
+    input::placeholder{
+      color: rgba(183,195,255,0.55);
+    }
+
+    input:focus, select:focus{
+      border-color: rgba(96,165,250,0.45);
+      box-shadow: 0 0 0 4px rgba(96,165,250,0.18);
+      background: rgba(255,255,255,0.14);
+    }
+
+    
+    select option{
+      background-color: #0b1233;
+      color: #eaf0ff;
+    }
+    select option:checked{
+      background-color: #1e293b;
+      color: #eaf0ff;
+    }
+    select option:hover{
+      background-color: #334155;
+      color: #ffffff;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      cursor:pointer;
+      font-weight: 800;
+      font-size: 13px;
+      user-select:none;
+      transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+      white-space: nowrap;
+    }
+    .btn:hover{
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.22);
+      box-shadow: 0 14px 30px rgba(0,0,0,0.25);
+    }
+
+    .error{
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(239,68,68,0.28);
+      background: rgba(239,68,68,0.10);
+      color: rgba(255,210,210,0.96);
+      display:none;
+      white-space: pre-wrap;
+      font-size: 13px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    table{
+      width:100%;
+      border-collapse: collapse;
+    }
+    th, td{
+      text-align:left;
+      padding: 9px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 13px;
+    }
+    th{
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .10em;
+      color: rgba(234,240,255,0.86);
+    }
+
+    .imgs{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 980px){
+      .imgs{ grid-template-columns: 1fr; }
+    }
+
+    .imgcard{
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.18);
+      padding: 10px;
+    }
+
+    .imgcard img{
+      width:100%;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      display:block;
+      cursor: zoom-in;
+    }
+
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.14);
+      font-size: 12px;
+      color: rgba(234,240,255,0.92);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <!-- NAV -->
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <div style="line-height:1.05;">YOLO Local Trainer</div>
+          <div class="muted">Trainer • Metrics</div>
+        </div>
+      </div>
+
+      <div class="nav">
+        <a class="pill" href="/">🧠 Trainer</a>
+        <a class="pill primary" href="/metrics">📊 Metrics</a>
+        <span class="muted">Browse runs</span>
+      </div>
+    </div>
+
+    <!-- HERO -->
+    <div class="hero">
+      <h1>Metrics & Plots</h1>
+      <p>Select a run from the dropdown (newest first). Metrics are read from <span class="mono">results.csv</span>.</p>
+    </div>
+
+    <!-- RUN PICKER -->
+    <div class="card">
+      <div class="card-hd">
+        <h3>Choose a run</h3>
+        <span class="chip">📁 Folder: <span class="mono" id="runDir">—</span></span>
+      </div>
+      <div class="card-bd">
+        <div class="row">
+          <div class="muted">Runs</div>
+          <select id="runsSel" class="mono">
+            <option value="">Loading…</option>
+          </select>
+          <button class="btn" id="refreshRunsBtn">Refresh list</button>
+
+          <span class="muted">or type:</span>
+          <input id="runInput" class="mono" placeholder="(blank = selected/latest)" />
+          <button class="btn" id="loadBtn">Load</button>
+          <button class="btn" id="loadLatestBtn">Load latest</button>
+        </div>
+
+        <div class="error" id="errBox"></div>
+
+        <div class="muted" style="margin-top:10px;">
+          Tip: Use the run name you typed in Trainer (e.g. <span class="mono">test6</span>).
+        </div>
+      </div>
+    </div>
+
+    <!-- METRICS -->
+    <div class="grid">
+      <div class="card">
+        <div class="card-hd">
+          <h3>Key metrics (last epoch)</h3>
+          <span class="chip">📌 Run: <span class="mono" id="runNameChip">—</span></span>
+        </div>
+        <div class="card-bd">
+          <div id="metricsWrap" class="muted">No data yet.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><h3>What you’re seeing</h3></div>
+        <div class="card-bd">
+          <div class="muted" style="line-height:1.55;">
+            <p style="margin-top:0;">
+              These metrics summarize how well your model performed on the <strong>validation set</strong>
+              after training. Values shown are typically from the <span class="mono">last epoch</span>.
+            </p>
+
+            <hr style="border:0; border-top:1px solid rgba(255,255,255,0.12); margin:12px 0;">
+
+            <p style="margin:0 0 6px;"><strong>📌 Key detection metrics</strong></p>
+            <ul style="margin:6px 0 10px 18px; padding:0;">
+              <li>
+                <span class="mono">precision</span> — of all predicted objects, how many were correct?
+                <br><span style="opacity:.85;">High precision = fewer false positives.</span>
+              </li>
+              <li style="margin-top:8px;">
+                <span class="mono">recall</span> — of all real objects, how many did the model find?
+                <br><span style="opacity:.85;">High recall = fewer missed detections.</span>
+              </li>
+              <li style="margin-top:8px;">
+                <span class="mono">mAP50</span> — mean average precision at IoU 0.50.
+                <br><span style="opacity:.85;">Good “easy” overall score.</span>
+              </li>
+              <li style="margin-top:8px;">
+                <span class="mono">mAP50-95</span> — average precision from IoU 0.50 → 0.95.
+                <br><span style="opacity:.85;">Stricter and more realistic.</span>
+              </li>
+            </ul>
+
+            <hr style="border:0; border-top:1px solid rgba(255,255,255,0.12); margin:12px 0;">
+
+            <p style="margin:0 0 6px;"><strong>📉 Loss values</strong></p>
+            <ul style="margin:6px 0 10px 18px; padding:0;">
+              <li><span class="mono">box_loss</span> — bounding box accuracy (lower is better)</li>
+              <li><span class="mono">cls_loss</span> — classification accuracy (lower is better)</li>
+              <li><span class="mono">dfl_loss</span> — localization quality term (lower is better)</li>
+            </ul>
+
+            <p style="margin:0; opacity:.9;">
+              💡 Tip: A good model balances <strong>precision</strong> and <strong>recall</strong>.
+              Very high precision + low recall usually means the model is too conservative.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IMAGES -->
+    <div class="card">
+      <div class="card-hd">
+        <h3>Plots</h3>
+        <span class="muted">results.png • PR curves • confusion matrix</span>
+      </div>
+      <div class="card-bd">
+        <div class="imgs" id="imgWrap"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Lightbox Modal -->
+  <div id="lightbox" style="display:none; position:fixed; inset:0; z-index:9999;">
+    <div id="lightboxBackdrop"
+         style="position:absolute; inset:0; background:rgba(0,0,0,0.75); backdrop-filter: blur(4px);"></div>
+
+    <div style="position:relative; height:100%; display:flex; align-items:center; justify-content:center; padding: 18px;">
+      <div style="
+        max-width: min(1200px, 95vw);
+        max-height: 92vh;
+        width: 100%;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.14);
+        background: rgba(10,15,35,0.65);
+        box-shadow: 0 18px 70px rgba(0,0,0,0.55);
+        overflow: hidden;
+      ">
+        <div style="
+          display:flex; align-items:center; justify-content:space-between; gap: 10px;
+          padding: 10px 12px;
+          border-bottom: 1px solid rgba(255,255,255,0.10);
+        ">
+          <div class="mono muted" id="lightboxTitle" style="overflow:hidden; text-overflow: ellipsis; white-space: nowrap;">
+            —
+          </div>
+
+          <button id="lightboxClose" class="btn" style="padding: 8px 10px;">Close ✕</button>
+        </div>
+
+        <div style="padding: 12px;">
+          <img id="lightboxImg" alt="Plot" style="
+            width:100%;
+            height:auto;
+            display:block;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.10);
+            background: rgba(255,255,255,0.04);
+            max-height: 78vh;
+            object-fit: contain;
+          " />
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const runsSel = document.getElementById("runsSel");
+  const refreshRunsBtn = document.getElementById("refreshRunsBtn");
+  const runInput = document.getElementById("runInput");
+  const loadBtn = document.getElementById("loadBtn");
+  const loadLatestBtn = document.getElementById("loadLatestBtn");
+  const errBox = document.getElementById("errBox");
+  const runDir = document.getElementById("runDir");
+  const metricsWrap = document.getElementById("metricsWrap");
+  const imgWrap = document.getElementById("imgWrap");
+  const runNameChip = document.getElementById("runNameChip");
+  const lightbox = document.getElementById("lightbox");
+  const lightboxImg = document.getElementById("lightboxImg");
+  const lightboxTitle = document.getElementById("lightboxTitle");
+  const lightboxClose = document.getElementById("lightboxClose");
+  const lightboxBackdrop = document.getElementById("lightboxBackdrop");
+
+  function openLightbox(src, title) {
+    lightboxImg.src = src;
+    lightboxTitle.textContent = title || "Image";
+    lightbox.style.display = "block";
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeLightbox() {
+    lightbox.style.display = "none";
+    lightboxImg.src = "";
+    document.body.style.overflow = "";
+  }
+
+  lightboxClose.addEventListener("click", closeLightbox);
+  lightboxBackdrop.addEventListener("click", closeLightbox);
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && lightbox.style.display === "block") {
+      closeLightbox();
+    }
+  });
+
+  function showErr(msg){
+    if(msg){ errBox.style.display="block"; errBox.textContent=msg; }
+    else{ errBox.style.display="none"; errBox.textContent=""; }
+  }
+
+  function renderMetrics(metrics){
+    const keys = Object.keys(metrics || {});
+    if(!keys.length){
+      metricsWrap.innerHTML = '<div class="muted">No metrics found.</div>';
+      return;
+    }
+    let html = '<table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
+    for(const k of keys){
+      let v = metrics[k];
+      if(typeof v === "number") v = v.toFixed(5);
+      html += `<tr><td class="mono">${k}</td><td class="mono">${v}</td></tr>`;
+    }
+    html += "</tbody></table>";
+    metricsWrap.innerHTML = html;
+  }
+
+  function renderImages(runName, images){
+    imgWrap.innerHTML = "";
+    if(!images || !images.length){
+      imgWrap.innerHTML = '<div class="muted">No plot images found.</div>';
+      return;
+    }
+
+    for(const fn of images){
+      const card = document.createElement("div");
+      card.className = "imgcard";
+
+      const img = document.createElement("img");
+      img.src = `/runs/${encodeURIComponent(runName)}/${encodeURIComponent(fn)}`;
+      img.loading = "lazy";
+      img.alt = fn;
+
+      img.addEventListener("click", () => openLightbox(img.src, fn));
+
+      const cap = document.createElement("div");
+      cap.className = "muted mono";
+      cap.style.marginTop = "8px";
+      cap.textContent = fn;
+
+      card.appendChild(img);
+      card.appendChild(cap);
+      imgWrap.appendChild(card);
+    }
+  }
+
+  async function loadRuns(){
+    runsSel.innerHTML = '<option value="">Loading…</option>';
+    const r = await fetch("/api/runs");
+    const d = await r.json();
+    if(!r.ok || !d.ok){
+      runsSel.innerHTML = '<option value="">(failed)</option>';
+      showErr("Failed to load runs list");
+      return;
+    }
+    runsSel.innerHTML = "";
+    for(const name of d.runs){
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      runsSel.appendChild(opt);
+    }
+    if(d.runs.length){
+      runsSel.value = d.runs[0];
+      runInput.value = d.runs[0];
+    }
+    runDir.textContent = d.base_dir || "—";
+  }
+
+  async function loadMetrics(){
+    const run = (runInput.value || runsSel.value || "").trim();
+    const r = await fetch(run ? `/api/metrics?run=${encodeURIComponent(run)}` : "/api/metrics");
+    const d = await r.json();
+    if(!r.ok || !d.ok){
+      showErr(d.error || "Failed to load metrics");
+      return;
+    }
+    runNameChip.textContent = d.run_name;
+    renderMetrics(d.metrics || {});
+    renderImages(d.run_name, d.images || []);
+  }
+
+  refreshRunsBtn.onclick = async () => { await loadRuns(); await loadMetrics(); };
+  runsSel.onchange = async () => { runInput.value = runsSel.value; await loadMetrics(); };
+  loadBtn.onclick = loadMetrics;
+  loadLatestBtn.onclick = async () => { runInput.value=""; await loadMetrics(); };
+
+  (async function init(){
+    await loadRuns();
+    await loadMetrics();
+  })();
+</script>
+
+</body>
+</html>
