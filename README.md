@@ -171,3 +171,15 @@ You are free to use, modify, and distribute it.
 ---
 
 If you find this project useful, consider starring the repo ⭐
+
+---
+---
+
+🚧 **More functionality coming soon!**
+
+Planned improvements include:
+- Choosing training **optimizers** (SGD, Adam, AdamW, etc.)
+- Custom **learning rate**, momentum, and weight decay
+- Additional training hyperparameters exposed in the UI
+- Expanded task support and enhanced run comparisons
+- More visualizations and overall workflow refinements
