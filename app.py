@@ -50,21 +50,23 @@ EPOCH_LINESTART_RE = re.compile(r"^\s*(\d+)\s*/\s*(\d+)(?:\s|$)")
 
 # Helpers
 
+
+
 def push_log(line: str):
-    """Put a log line into the SSE queue."""
+    
     try:
         STATE.logs.put(line)
     except Exception:
         pass
 
 def _runs_base_dir() -> str:
-    """Base directory that contains run folders (runs/detect by default)."""
+    
     with LOCK:
         project_dir = STATE.output_path
     return project_dir if project_dir else os.path.join(os.getcwd(), "runs", "detect")
 
 def pick_directory_dialog(title: str) -> str | None:
-    """Open a native folder picker dialog (works only as a local app)."""
+    
     root = tk.Tk()
     root.withdraw()
     root.update()
@@ -76,7 +78,7 @@ def pick_directory_dialog(title: str) -> str | None:
 
 
 def pick_save_file_dialog(title: str, default_name: str) -> str | None:
-    """Open a native Save As dialog to choose where to save the trained .pt."""
+    
     root = tk.Tk()
     root.withdraw()
     root.update()
@@ -93,12 +95,7 @@ def pick_save_file_dialog(title: str, default_name: str) -> str | None:
 
 
 def validate_yolo_dataset(dataset_root: str) -> tuple[bool, str]:
-    """
-    Accept either:
-      A) dataset_root contains data.yaml
-      OR
-      B) dataset_root/images/train and dataset_root/labels/train exist
-    """
+    
     data_yaml = os.path.join(dataset_root, "data.yaml")
     if os.path.isfile(data_yaml):
         return True, "Found data.yaml"
@@ -120,7 +117,6 @@ def validate_yolo_dataset(dataset_root: str) -> tuple[bool, str]:
 
 
 def _safe_run_name(name: str) -> str:
-    """Filesystem-safe run name for Ultralytics 'name='."""
     name = (name or "").strip() or f"train_{int(time.time())}"
     name = "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in name)
     return name[:80]
@@ -141,10 +137,7 @@ def _safe_join(base: str, *paths: str) -> str:
     return candidate
 
 def _read_last_metrics_csv(csv_path: str) -> dict:
-    """
-    Reads Ultralytics results.csv and returns last-row metrics as a dict.
-    No pandas required.
-    """
+    
     if not os.path.isfile(csv_path):
         return {}
 
@@ -180,13 +173,7 @@ def run_training_job(
     project_dir: str | None,
     run_name: str,
 ):
-    """
-    Runs YOLO training in a background thread.
-    - Streams stdout to SSE
-    - Updates progress by STRICTLY parsing "Epoch x/y"
-    - Keeps total_epochs fixed to the user-selected `epochs` (prevents "4/4" batch confusion)
-    - Records best.pt path when done (does NOT export/copy)
-    """
+    
     with LOCK:
         STATE.status = "running"
         STATE.progress_pct = 0
@@ -414,10 +401,7 @@ def api_start_train():
 
 @app.post("/api/export_model")
 def api_export_model():
-    """
-    Called when user clicks "Download .pt".
-    Opens a Save-As dialog and copies best.pt to the chosen path.
-    """
+    
     with LOCK:
         best_pt = STATE.best_pt_path
         run_name = STATE.run_name or "trained_model"
@@ -441,11 +425,7 @@ def api_export_model():
 
 @app.get("/api/logs")
 def api_logs():
-    """
-    SSE stream:
-      - event: log      -> log lines
-      - event: progress -> status/progress snapshot ~1/sec
-    """
+    
     def event_stream():
         last_ping = time.time()
         while True:
